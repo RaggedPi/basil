@@ -3,18 +3,25 @@
   Arduino 4 "basil"
   Written by david durost <david.durost@gmail.com>
 */
-#define fanRelay 6  // digital pin
-#define mppt 2      // digital pin
-#define led 13      // led pin
+
+#include <Relay.h>
+
+#define FAN 1       // relay number [1-4]
+#define MPPT 2      // digital pin
+#define LED 13      // led pin
+
+Relay fanRelay(FAN, LOW);
 
 void setup()
 {
     Serial.begin(9600);
-    pinMode(fanRelay, OUTPUT);
-    pinMode(mppt, INPUT);
-    pinMode(led, OUTPUT);
+
+    pinMode(MPPT, INPUT);
+    pinMode(LED, OUTPUT);
 }
 
 void loop() {
-    pinMode(fanRelay, digitalRead(mppt));
+    if ((HIGH == MPPT && fanRelay.isOff()) || (LOW == MPPT && fanRelay.isOn())){
+        fanRelay.toggle();
+    }
 }
