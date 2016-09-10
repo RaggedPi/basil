@@ -1,0 +1,9 @@
+RaggedPi Project
+Codename: Basil
+
+Mechanical room Arduino unit
+
+Features:
+- Xbee2
+- relay shield
+- temp/ humidity sensors
