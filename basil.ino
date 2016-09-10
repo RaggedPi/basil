@@ -14,9 +14,17 @@ Relay fanRelay(RELAY1, LOW);
 void setup()
 {
     Serial.begin(9600);
+    Serial.println("RaggedPi Project Codename Basil Initialized.");
+  
+    fanRelay.begin();
 
     pinMode(MPPT, INPUT);
     pinMode(LED, OUTPUT);
+
+    Serial.print("Fan Relay: ");
+    Serial.println(fanRelay.state());
+    Serial.print("MPPT Input State: ");
+    Serial.println(digitalRead(MPPT));
 }
 
 void loop() {
