@@ -6,11 +6,10 @@
 
 #include <Relay.h>
 
-#define FAN 1       // relay number [1-4]
 #define MPPT 2      // digital pin
 #define LED 13      // led pin
 
-Relay fanRelay(FAN, LOW);
+Relay fanRelay(RELAY1, LOW);
 
 void setup()
 {
