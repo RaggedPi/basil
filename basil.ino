@@ -28,7 +28,8 @@ void setup()
 }
 
 void loop() {
-    if ((HIGH == MPPT && fanRelay.isOff()) || (LOW == MPPT && fanRelay.isOn())){
+    uint8_t mppt = digitalRead(MPPT);
+    if ((HIGH==mppt && fanRelay.isOff()) || (LOW==mppt && fanRelay.isOn())){
         fanRelay.toggle();
     }
 }
