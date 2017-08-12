@@ -23,7 +23,7 @@ enum Modes {
 };
 
 /* Objects */
-Relay fanRelay(RELAY1, LOW);    // relay
+Relay fanRelay(RELAY4, LOW);    // relay
 
 /* Variables */
 unsigned long sleep = 0;
