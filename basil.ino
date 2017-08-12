@@ -6,6 +6,7 @@
 /* Includes */
 #include <SoftwareSerial.h>     // Serial library
 #include <Relay.h>              // Relay library
+#include <OneButton.h>          // Button library
 
 /* Misc Constants */
 #define SDA 2                   // sda
@@ -13,6 +14,7 @@
 #define CS 10                   // chipselect
 #define LED 13                  // led pin
 #define MPPT 4                  // digital pin
+#define BTN 2                   // digital pin
 #define SLEEP_TIME 90000        // ms
 
 /* Enums */
@@ -23,7 +25,8 @@ enum Modes {
 };
 
 /* Objects */
-Relay fanRelay(RELAY1, LOW);    // relay
+Relay fanRelay(RELAY4, LOW);    // relay
+OneButton btn(BTN, true);       // button
 
 /* Variables */
 unsigned long sleep = 0;
@@ -100,11 +103,15 @@ void setup() {
 
     /* Set pins ***************************************************************/
     pinMode(MPPT, INPUT);
+    pinMode(BTN, INPUT);
     pinMode(LED, OUTPUT);
     pinMode(CS, OUTPUT);
 
     Serial.println("RaggedPi Project Codename Basil Initializing...");
     
+    /* Button *****************************************************************/
+    btn.attachClick(manualMode);
+
     /* Relay ******************************************************************/
     Serial.print("Initializing relays...");
     fanRelay.begin();
@@ -117,6 +124,7 @@ void setup() {
  * Loop
  */
 void loop() {
+    btn.tick();
     switch(status) {
         case MONITOR_MODE:
             monitorMode();
