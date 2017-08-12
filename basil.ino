@@ -6,6 +6,7 @@
 /* Includes */
 #include <SoftwareSerial.h>     // Serial library
 #include <Relay.h>              // Relay library
+#include <Pir.h>                // PIR library
 
 /* Misc Constants */
 #define SDA 2                   // sda
@@ -23,7 +24,9 @@ enum Modes {
 };
 
 /* Objects */
-Relay fanRelay(RELAY1, LOW);    // relay
+Relay fanRelay(RELAY4, LOW);    // relay
+Relay lightRelay(RELAY3, LOW);  // relay
+PIR pirSensor(PIR_SENSOR);      // sensor
 
 /* Variables */
 unsigned long sleep = 0;
@@ -88,6 +91,18 @@ void manualMode() {
     }
 }
 
+/**
+ * Check for motion
+ */
+void checkForMotion() {
+    if (HIGH == pirSensor.read()) {
+        Serial.println("Motion detected.");
+        lightRelay.on();
+    } else {
+        lightRelay.off();
+    }
+}
+
 /*******************************************************************************
 ** MAIN METHODS ****************************************************************
 *******************************************************************************/
@@ -110,13 +125,21 @@ void setup() {
     fanRelay.begin();
     Serial.println("[OK]");
     delay(600);
+    /* Motion Sensor **********************************************************/
+    Serial.print("Initializing motion sensor...");
+    pirSensor.begin();
+    Serial.println("[OK]");
+    delay(600);
+    /* System *****************************************************************/
     Serial.println("System initialized.");
     delay(600);
 }
+
 /**
  * Loop
  */
 void loop() {
+    checkForMotion();
     switch(status) {
         case MONITOR_MODE:
             monitorMode();
