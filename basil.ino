@@ -12,8 +12,8 @@
 #define SDL 3                   // sdl
 #define CS 10                   // chipselect
 #define LED 13                  // led pin
-#define MPPT 4                  // digital pin
-#define SLEEP_TIME 90000        // ms
+#define MPPT_INPUT_PIN 4        // digital pin
+#define SLEEP_TIME 10000        // sleep time ms)
 
 /* Enums */
 enum Modes {
@@ -26,38 +26,29 @@ enum Modes {
 Relay fanRelay(RELAY4, LOW);    // relay
 
 /* Variables */
-unsigned long sleep = 0;
-Modes status = MONITOR_MODE;
-
-/**
- * Read mppt pin
- * @return uint8_t
- */
-uint8_t readMppt() {
-    return digitalRead(MPPT);
-}
+bool override = false;
+Modes state = MONITOR_MODE;
 
 /**
  * Monitor mode
   */
 void monitorMode() {
     Serial.println("Monitoring.");
-    uint8_t mppt = readMppt();
-    Serial.print("mppt: ");
-    Serial.println(mppt);
 
-    while (mppt != fanRelay.isOn()) {
-//        fanRelay.toggle();
-        Serial.print("fan ");
-        if (fanRelay.isOff()) {
-            Serial.println("activated.");
-            fanRelay.on();
-        } else {
-            Serial.println("deactivated.");
-            fanRelay.off();
-            status = SLEEP_MODE;
-            sleep = millis();
-        }
+    switch (digitalRead(MPPT_INPUT_PIN)) {
+        case false:
+            if (fanRelay.isOn() && !override) {
+                fanRelay.off();
+                Serial.println("fan deactivated.");
+                state = SLEEP_MODE;
+            }
+            break;
+        case true:
+            if (fanRelay.isOff()) {
+                fanRelay.on();
+                Serial.println("fan activated.");
+            }
+            break;
     }
 }
 
@@ -65,32 +56,28 @@ void monitorMode() {
  * Sleep mode
  */
 void sleepMode() {
-    Serial.println("Sleeping.");
-
-    while ((millis() - sleep) < SLEEP_TIME) {
-        fanRelay.off();
-    }
-    status = MONITOR_MODE;
+    Serial.println("Sleeping...");
+    
+    fanRelay.off();
+    delay(SLEEP_TIME);
+    state = MONITOR_MODE;
 }
 
 /**
  * Manual mode
  */
 void manualMode() {
-    Serial.print("vent fan relay manually ");
-    if (fanRelay.isOn()) {
-        Serial.println("deactivated.");
-        status = SLEEP_MODE;
-        sleep = millis();
-    } else {
-        Serial.println("activated.");
-        status = MONITOR_MODE;
+    if (override && fanRelay.isOff()) {
+        fanRelay.on();
+        Serial.println("fan manually activated.");
+    } else if (override && fanRelay.isOn())   state = state;
+    else {
+        fanRelay.off();
+        Serial.println("fan manually deactivated.");
+        state = MONITOR_MODE;
     }
 }
 
-/*******************************************************************************
-** MAIN METHODS ****************************************************************
-*******************************************************************************/
 /**
  * Setup
  */
@@ -98,14 +85,12 @@ void setup() {
     Serial.begin(9600);
     while (!Serial);
 
-    /* Set pins ***************************************************************/
-    pinMode(MPPT, INPUT);
+    pinMode(MPPT_INPUT_PIN, INPUT);
     pinMode(LED, OUTPUT);
     pinMode(CS, OUTPUT);
 
     Serial.println("RaggedPi Project Codename Basil Initializing...");
     
-    /* Relay ******************************************************************/
     Serial.print("Initializing relays...");
     fanRelay.begin();
     Serial.println("[OK]");
@@ -113,11 +98,12 @@ void setup() {
     Serial.println("System initialized.");
     delay(600);
 }
+
 /**
  * Loop
  */
 void loop() {
-    switch(status) {
+    switch(state) {
         case MONITOR_MODE:
             monitorMode();
             break;
