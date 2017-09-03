@@ -12,7 +12,7 @@
 #define SDL 3                   // sdl
 #define CS 10                   // chipselect
 #define LED 13                  // led pin
-#define MPPT_INPUT_PIN 4        // digital pin
+#define MPPT_INPUT_PIN 8        // digital pin
 #define SLEEP_TIME 10000        // sleep time ms)
 
 /* Enums */
@@ -23,7 +23,7 @@ enum Modes {
 };
 
 /* Objects */
-Relay fanRelay(RELAY4, LOW);    // relay
+Relay fanRelay(RELAY3, LOW);    // relay
 
 /* Variables */
 bool override = false;
@@ -114,5 +114,5 @@ void loop() {
             manualMode();
             break;
     }
-    delay(10000);
+    delay(5000);
 }
