@@ -6,94 +6,34 @@
 /* Includes */
 #include <SoftwareSerial.h>     // Serial library
 #include <Relay.h>              // Relay library
-#include <OneButton.h>          // Button library
+#include <OneButton.h>          // OneButton library
 
-/* Misc Constants */
-#define SDA 2                   // sda
-#define SDL 3                   // sdl
-#define CS 10                   // chipselect
-#define LED 13                  // led pin
-#define MPPT 4                  // digital pin
-#define BTN 2                   // digital pin
-#define SLEEP_TIME 90000        // ms
-
-/* Enums */
-enum Modes {
-    MONITOR_MODE,
-    SLEEP_MODE,
-    MANUAL_MODE
-};
-
-/* Objects */
-Relay fanRelay(RELAY4, LOW);    // relay
-OneButton btn(BTN, true);       // button
+/* Constants */
+// Misc
+#define SDA 2                           // sda
+#define SDL 3                           // sdl
+#define CS 10                           // chipselect
+#define LED 13                          // led pin
+// Pins
+#define MPPT_INPUT_PIN 4                // digital pin
+#define BUTTON_PIN 5                    // digital pin
+// Settings
+#define READ_WAIT_TIME 60000            // ms
 
 /* Variables */
-unsigned long sleep = 0;
-Modes status = MONITOR_MODE;
+Relay fan(RELAY3, HIGH);                // relay
+OneButton button(BUTTON_PIN, true);     // button
+bool override = false;                   // override
+unsigned long lastMpptReadTime = 0;     // ms
 
+/* Methods */
 /**
- * Read mppt pin
- * @return uint8_t
+ * Override fan
  */
-uint8_t readMppt() {
-    return digitalRead(MPPT);
+void overrideFan() {
+    override = true;
+    if (fan.isOff())    fan.on();
 }
-
-/**
- * Monitor mode
-  */
-void monitorMode() {
-    Serial.println("Monitoring.");
-    uint8_t mppt = readMppt();
-    Serial.print("mppt: ");
-    Serial.println(mppt);
-
-    while (mppt != fanRelay.isOn()) {
-//        fanRelay.toggle();
-        Serial.print("fan ");
-        if (fanRelay.isOff()) {
-            Serial.println("activated.");
-            fanRelay.on();
-        } else {
-            Serial.println("deactivated.");
-            fanRelay.off();
-            status = SLEEP_MODE;
-            sleep = millis();
-        }
-    }
-}
-
-/**
- * Sleep mode
- */
-void sleepMode() {
-    Serial.println("Sleeping.");
-
-    while ((millis() - sleep) < SLEEP_TIME) {
-        fanRelay.off();
-    }
-    status = MONITOR_MODE;
-}
-
-/**
- * Manual mode
- */
-void manualMode() {
-    Serial.print("vent fan relay manually ");
-    if (fanRelay.isOn()) {
-        Serial.println("deactivated.");
-        status = SLEEP_MODE;
-        sleep = millis();
-    } else {
-        Serial.println("activated.");
-        status = MONITOR_MODE;
-    }
-}
-
-/*******************************************************************************
-** MAIN METHODS ****************************************************************
-*******************************************************************************/
 /**
  * Setup
  */
@@ -101,40 +41,27 @@ void setup() {
     Serial.begin(9600);
     while (!Serial);
 
-    /* Set pins ***************************************************************/
-    pinMode(MPPT, INPUT);
-    pinMode(BTN, INPUT);
+    pinMode(MPPT_INPUT_PIN, INPUT);
     pinMode(LED, OUTPUT);
     pinMode(CS, OUTPUT);
 
     Serial.println("RaggedPi Project Codename Basil Initializing...");
     
-    /* Button *****************************************************************/
-    btn.attachClick(manualMode);
+    button.attachClick(overrideFan);
+    fan.begin();
 
-    /* Relay ******************************************************************/
-    Serial.print("Initializing relays...");
-    fanRelay.begin();
-    Serial.println("[OK]");
-    delay(600);
-    Serial.println("System initialized.");
     delay(600);
 }
 /**
  * Loop
  */
 void loop() {
-    btn.tick();
-    switch(status) {
-        case MONITOR_MODE:
-            monitorMode();
-            break;
-        case SLEEP_MODE:
-            sleepMode();
-            break;
-        case MANUAL_MODE:
-            manualMode();
-            break;
+    button.tick();
+    if ((millis() - lastMpptReadTime) >= READ_WAIT_TIME) {
+        if (override || (digitalRead(MPPT_INPUT_PIN) && fan.isOff()))
+            fan.on();
+        else    fan.off();
+        lastMpptReadTime = millis();
     }
-    delay(10000);
+    delay(5000);
 }
