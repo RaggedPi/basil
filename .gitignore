@@ -1,1 +1,2 @@
-basil.ino.old
+*.old
+*.sublime-*
