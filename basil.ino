@@ -23,17 +23,29 @@
 /* Variables */
 Relay fan(RELAY3, HIGH);                // relay
 OneButton button(BUTTON_PIN, true);     // button
-bool override = false;                   // override
+bool override[2] = { false, false };    // overrides
 unsigned long lastMpptReadTime = 0;     // ms
+
 
 /* Methods */
 /**
- * Override fan
+ * Fan on
+ * @return {[type]} [description]
  */
-void overrideFan() {
-    override = true;
-    if (fan.isOff())    fan.on();
+void fanOn() {
+    override[OFF] = false;
+    override[ON] = true;    
 }
+
+/**
+ * Fan off
+ * @return {[type]} [description]
+ */
+void fanOff() {
+    override[ON] = false;
+    override[OFF] = true;
+}
+
 /**
  * Setup
  */
@@ -47,7 +59,8 @@ void setup() {
 
     Serial.println("RaggedPi Project Codename Basil Initializing...");
 
-    button.attachClick(overrideFan);
+    button.attachClick(fanOn);
+    button.attachDoubleClick(fanOff);
     fan.begin();
 
     delay(600);
@@ -58,9 +71,8 @@ void setup() {
 void loop() {
     button.tick();
     if ((millis() - lastMpptReadTime) >= READ_WAIT_TIME) {
-        if (override || (digitalRead(MPPT_INPUT_PIN) && fan.isOff()))
-            fan.on();
-        else    fan.off();
+        if ( fan.isOff() && ( override[ON] || ( 0 > digitalRead(MPPT_INPUT_PIN) ) ) )    fan.on();
+        if ( fan.isOn() && ( override[OFF] || ( 0 > digitalRead(MPPT_INPUT_PIN) ) ) )    fan.off();      
         lastMpptReadTime = millis();
     }
     delay(5000);
